@@ -1,70 +1,24 @@
-import random
-import string
+import json
 import sys
+import random
 import time
-import uuid
+from bson import json_util
 from datetime import datetime, timedelta
 from pymongo import MongoClient, ASCENDING
+from sample import *
 
 QUERY_NUM = 20
+LOG = "INFO" # DEBUG | PLAN | INFO
 
-def gen_datetime():
-  d = random.randint(0, 1001)
-  h = random.randint(0, 25)
-  m = random.randint(0, 60)
-  return datetime.now() - timedelta(days=d, hours=h, minutes=m)
-
-def gen_tag():
-  return str(uuid.uuid4())
-
-def gen_str(length=10):
-  letters = string.ascii_letters
-  return ''.join(random.choice(letters) for i in range(length))
-
-def gen_usermeta():
-  def gen_rand(data_type):
-    if data_type == 1: # string
-      key = "a" * random.randint(2, 6)
-      val = gen_str(length=random.randint(10, 30))
-    elif data_type == 2: # int
-      key = "b" * random.randint(2, 6)
-      val = random.randint(0, 1000)
-    else: # datetime
-      key = "c" * random.randint(2, 6)
-      val = gen_datetime()
-    return (key, val) 
-  
-  meta = {
-    "a": gen_str(),
-    "b": gen_str(length=20),
-    "c": random.randint(0, 100),
-    "d": random.randint(0, 500),
-    "e": gen_datetime(),
-    "f": gen_datetime(),
-    "g": random.choice(["xlsx", "csv", "txt", "other"]),
-    "h": random.choice(["A", "B", "C", "D", "E", "F", "G"])
-  }
-  for i in range(10):
-    if random.randint(0, 2) == 2:
-      key, val = gen_rand(data_type=random.randint(1,3))
-      meta[key] = val
-  return meta
-
-
-def gen_meta():
-  date = gen_datetime()
-  return {
-    "accept-ranges": "bytes",
-    "content-length": random.randint(1000, 60000),
-    "content-type": "binary/octet-stream",
-    "date": date,
-    "etag": gen_tag(),
-    "last-modified": date,
-    "x-amz-id-2": gen_tag(),
-    "x-amz-request-id": gen_tag(),
-    "x-amz-version-id": gen_tag(),
-    "user-metadata": gen_usermeta()
-  }
+INSERT_DOC = False
+TEST_QUERY_FILE_EXTENSTION = True
+TEST_QUERY_TAG = True
+TEST_QUERY_DATE = True
+TEST_QUERY_E = True
+TEST_QUERY_CCC = True
+TEST_QUERY_LENGTH = True
+TEST_QUERY_C = True
+TEST_QUERY_BBB = True
 
 def process_doc(doc):
   ret = []
@@ -82,74 +36,171 @@ def process_doc(doc):
         })
   return {"properties": ret}
 
+def print_query_plan(plan, pretty=True):
+  if LOG not in ["DEBUG", "PLAN"]:
+    return
+  if pretty:
+    print("    query explain")
+    print(json.dumps(plan, indent=4, default=json_util.default))
+  else:
+    print(f"    query explain: {plan}")
+
+def print_count(cursor, info):
+  c = 0
+  for _ in cursor:
+    c += 1
+  if LOG   == "DEBUG":
+    print(f"    found {c} with {info}")
+
+def print_pef(start, end):
+  print(f"  == TOTAL QUERY TIME: {end - start}s")
+  print(f"  == AVG QUERY TIME: {(end - start) / QUERY_NUM}s")
+
 print("Establishing connection with MongoDB")
 client = MongoClient("localhost", 27017)
 db = client["test-database"]
 collections = db.list_collection_names()
-# if len(collections) != 0:
-#   print(f"Database is not empty, found collections: {collections}")
-#   sys.exit()
+if INSERT_DOC and len(collections) != 0:
+  print(f"Database is not empty, found collections: {collections}")
+  print(f"You should properly clean up docker file for new tests")
+  sys.exit()
 metadatas = db.metadatas
-# metadatas.create_index([("properties.key", ASCENDING), ("properties.val", ASCENDING)])
+metadatas.create_index([("properties.key", ASCENDING), ("properties.val", ASCENDING)])
 print("All set, ready to test")
 
-# print("Insert 10k documents in db")
-# start = time.time()
-# for i in range(10000):
-#   doc = gen_meta()
-#   p_doc = process_doc(doc)
-#   metadatas.insert_one(p_doc)
-# end = time.time()
-# print("Finish inserting 10k documents")
-# print(f"== INSERT TIME: {end - start}s")
+print("Insert 10k documents in db")
+if INSERT_DOC: 
+  start = time.time()
+  for i in range(10000):
+    doc = gen_meta()
+    p_doc = process_doc(doc)
+    metadatas.insert_one(p_doc)
+  end = time.time()
+  print("Finish inserting 10k documents")
+  print(f"  == INSERT TIME: {end - start}s")
 
 print("Confirming number of documenets")
 start = time.time()
 c = metadatas.count_documents({})
 end = time.time()
 print(f"Number of documents={c}")
-print(f"== COUNT TIME: {end - start}s")
+print(f"  == COUNT TIME: {end - start}s")
 
 print("Query exact - file extension")
-print(f"    query explain: {metadatas.find({'properties.key': 'user-meta-g', 'properties.val': 'xlsx'}).explain()}")
-start = time.time()
-for i in range(QUERY_NUM):
-  file_extension = random.choice(["xlsx", "csv", "txt", "other"])
-  cursor = metadatas.find({"properties.key": "user-meta-g", "properties.val": file_extension})
-  c = 0
-  for _ in cursor:
-    c += 1
-  print(f"    found {c} with {file_extension}")
-end = time.time()
-print(f"== TOTAL QUERY TIME: {end - start}s")
-print(f"== TOTAL QUERY TIME: {(end - start) / QUERY_NUM}s")
+if TEST_QUERY_FILE_EXTENSTION: 
+  def query(file_extension):
+    return {
+      "properties": {
+        "$elemMatch": {
+          "key": "user-meta-g",
+          "val": file_extension
+        }
+      }
+    }
+  # query plan
+  r = metadatas.find(query("xlsx")).explain()
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for i in range(QUERY_NUM):
+    file_extension = random.choice(["xlsx", "csv", "txt", "other"])
+    cursor = metadatas.find(query(file_extension))
+    print_count(cursor, f"{file_extension}")
+  end = time.time()
+  print_pef(start, end)
 
 print("Query exact - tag")
-print(f"    query explain: {metadatas.find({'properties.key': 'user-meta-h', 'properties.val': 'A'}).explain()}")
-start = time.time()
-for i in range(QUERY_NUM):
-  file_extension = random.choice(["A", "B", "C", "D", "E", "F", "G"])
-  cursor = metadatas.find({"properties.key": "user-meta-h", "properties.val": file_extension})
-  c = 0
-  for _ in cursor:
-    c += 1
-  print(f"    found {c} with {file_extension}")
-end = time.time()
-print(f"== TOTAL QUERY TIME: {end - start}s")
-print(f"== TOTAL QUERY TIME: {(end - start) / QUERY_NUM}s")
-
+if TEST_QUERY_TAG: 
+  def query(tag):
+    return {
+      "properties": {
+        "$elemMatch": {
+          "key": "user-meta-h",
+          "val": tag
+        }
+      }
+    }
+  # query plan
+  r = metadatas.find(query("A")).explain()
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for i in range(QUERY_NUM):
+    tag = random.choice(["A", "B", "C", "D", "E", "F", "G"])
+    cursor = metadatas.find(query(tag))
+    print_count(cursor, f"{tag}")
+  end = time.time()
+  print_pef(start, end)
 
 print("Query date range - date")
+if TEST_QUERY_DATE: 
+  def gen_test_date():
+    start_date = gen_datetime()
+    return (start_date, start_date + timedelta(days=20))
+  def query(start_date, end_date):
+    return {
+      "properties": {
+        "$elemMatch": {
+          "key": "date",
+          "val": {
+            "$gte": start_date,
+            "$lte": end_date
+          }
+        }
+      }
+    }
+  # query play
+  start_date, end_date = gen_test_date()
+  r = metadatas.find(query(start_date, end_date)).explain()
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for i in range(1):
+    start_date, end_date = gen_test_date()
+    cursor = metadatas.find(query(start_date, end_date))
+    print_count(cursor, f"s:{start_date}, e:{end_date}")
+  end = time.time()
+  print_pef(start, end)
 
 print("Query date range - e")
+if TEST_QUERY_E:
+  print("  == SKIP: similar to date")
 
 print("Query date range - ccc")
+if TEST_QUERY_CCC:
+  print("  == SKIP: similar to date")
 
 print("query int range - content length")
+if TEST_QUERY_LENGTH:
+  start = time.time()
+  for i in range(QUERY_NUM):
+    start_int = random.randint(1000, 9000)
+    end_int = start_int + 500
+    query = {
+      "properties": {
+        "$elemMatch": {
+          "key": "content-length",
+          "val": {
+            "$gte": start_int,
+            "$lte": end_int
+          }
+        }
+      }
+    }
+    cursor = metadatas.find(query)
+    print_count(cursor, f"s: {start_int}, e: {end_int}")    
+  end = time.time()
+  print(f"  == TOTAL QUERY TIME: {end - start}s")
+  print(f"  == AVG QUERY TIME: {(end - start) / QUERY_NUM}s")
 
 print("query int range - c")
+if TEST_QUERY_C:
+  print("  == SKIP: similar to content-length")
+  pass
 
 print("query int range - bbb")
+if TEST_QUERY_BBB:
+  print("  == SKIP: similar to content-length")
 
 
 
