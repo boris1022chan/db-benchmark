@@ -1,11 +1,13 @@
 import json
-from bson import json_util
 import psycopg2
+import random
+import string
 import time
+from bson import json_util
 from sample import *
 
 QUERY_NUM = 20
-LOG = "DEBUG" # DEBUG | PLAN | INFO
+LOG = "PLAN" # DEBUG | PLAN | INFO
 
 CREATE_TABLE = False
 INSERT_DOC = False
@@ -66,6 +68,11 @@ INSERT INTO metadatas (
 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
 """
 
+def print_count(cnt, info):
+  if LOG != "DEBUG":
+    return
+  print(f"    found {cnt} with {info}")
+
 def print_query_plan(plan):
   if LOG not in ["DEBUG", "PLAN"]:
     return
@@ -74,6 +81,15 @@ def print_query_plan(plan):
 def print_pef(start, end):
   print(f"  == TOTAL QUERY TIME: {end - start}s")
   print(f"  == AVG QUERY TIME: {(end - start) / QUERY_NUM}s")
+
+def process_doc(user_metadata):
+  ret = {}
+  for k, v in user_metadata.items():
+    if isinstance(v, datetime):
+      ret[k] = v.isoformat()
+    else:
+      ret[k] = v
+  return ret
 
 print("Establishing connection with Postgres")
 conn = psycopg2.connect(database='test-database',
@@ -92,7 +108,7 @@ if INSERT_DOC:
   start = time.time()
   for i in range(10000):
     doc = gen_meta()
-    user_metadata = doc["user-metadata"]
+    user_metadata = process_doc(doc["user-metadata"])
     params = (
       doc["name"],
       doc["accept-ranges"],
@@ -104,7 +120,7 @@ if INSERT_DOC:
       doc["x-amz-id-2"],
       doc["x-amz-request-id"],
       doc["x-amz-version-id"],
-      json.dumps(doc["user-metadata"], default=json_util.default)
+      json.dumps(user_metadata)
     )
     cursor.execute(insert_query, params)
   end = time.time()
@@ -122,7 +138,22 @@ print(f"  == COUNT TIME: {end - start}s")
 
 print("Query prefix - name")
 if TEST_QUERY_NAME:
-  pass
+  def query(name_prefix):
+    return f"SELECT * from metadatas where name like '{name_prefix}%'"
+  # query
+  cursor.execute(QUERY_PLAN_PREFIX + query("aaaaa"))
+  r = cursor.fetchone()[0]
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    prefix = random.choice(string.ascii_lowercase) * 5
+    cursor.execute(query(prefix))
+    r = cursor.fetchall()
+    print_count(len(r), prefix)
+  end = time.time()
+  print_pef(start, end)
+  # https://niallburkley.com/blog/index-columns-for-like-in-postgres/
 
 print("Query exact - file extension")
 if TEST_QUERY_FILE_EXTENSTION:
@@ -138,7 +169,7 @@ if TEST_QUERY_FILE_EXTENSTION:
     file_extension = random.choice(["xlsx", "csv", "txt", "other"])
     cursor.execute(query(file_extension))
     r = cursor.fetchall()
-    print(f"    found {len(r)} with {file_extension}")
+    print_count(len(r), file_extension)
   end = time.time()
   print_pef(start, end)
 
@@ -156,7 +187,7 @@ if TEST_QUERY_TAG:
     tag = random.choice(["A", "B", "C", "D", "E", "F", "G"])
     cursor.execute(query(tag))
     r = cursor.fetchall()
-    print(f"    found {len(r)} with {tag}")
+    print_count(len(r), tag)
   end = time.time()
   print_pef(start, end)
 
@@ -178,17 +209,123 @@ if TEST_QUERY_DATE:
     start_date, end_date = gen_test_date()
     cursor.execute(query(start_date, end_date))
     r = cursor.fetchall()
-    print(f"    found {len(r)} with s:{start_date}, e:{end_date}")
+    print_count(len(r), f"s:{start_date}, e:{end_date}")
+  end = time.time()
+  print_pef(start, end)
+
+print("Query date range - e")
+if TEST_QUERY_E:
+  def gen_test_date():
+    start_date = gen_datetime()
+    return (start_date, start_date + timedelta(days=20))
+  def query(start_date, end_date):
+    return ("SELECT * FROM metadatas WHERE "
+      f"(usermeta->>'e')::timestamp >= '{start_date.isoformat()}'::timestamp "
+      f"AND (usermeta->>'e')::timestamp >= '{end_date.isoformat()}'::timestamp;")
+  # query plan
+  start_date, end_date = gen_test_date()
+  cursor.execute(QUERY_PLAN_PREFIX + query(start_date, end_date))
+  r = cursor.fetchone()[0]
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    start_date, end_date = gen_test_date()
+    cursor.execute(query(start_date, end_date))
+    r = cursor.fetchall()
+    print_count(len(r), f"s:{start_date}, e:{end_date}")
   end = time.time()
   print_pef(start, end)
 
 print("Query date range - ccc")
 if TEST_QUERY_CCC:
-  pass
+  def gen_test_date():
+    start_date = gen_datetime()
+    return (start_date, start_date + timedelta(days=20))
+  def query(start_date, end_date):
+    return ("SELECT * FROM metadatas WHERE "
+      f"(usermeta->>'ccc')::timestamp >= '{start_date.isoformat()}'::timestamp "
+      f"AND (usermeta->>'ccc')::timestamp >= '{end_date.isoformat()}'::timestamp;")
+  # query plan
+  start_date, end_date = gen_test_date()
+  cursor.execute(QUERY_PLAN_PREFIX + query(start_date, end_date))
+  r = cursor.fetchone()[0]
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    start_date, end_date = gen_test_date()
+    cursor.execute(query(start_date, end_date))
+    r = cursor.fetchall()
+    print_count(len(r), f"s:{start_date}, e:{end_date}")
+  end = time.time()
+  print_pef(start, end)
 
 print("query int range - content length")
 if TEST_QUERY_LENGTH:
-  pass
+  def gen_bound():
+    lower = random.randint(1000, 30000)
+    return (lower, lower + 100)
+  def query(lower, upper):
+    return f"SELECT contentlength FROM metadatas WHERE contentlength BETWEEN {lower} AND {upper};"
+  # query plan
+  lower, upper = gen_bound()
+  cursor.execute(QUERY_PLAN_PREFIX + query(lower, upper))
+  r = cursor.fetchone()[0]
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    lower, upper = gen_bound()
+    cursor.execute(query(lower, upper))
+    r = cursor.fetchall()
+    print_count(len(r), f"l:{lower}, u:{upper}")
+  end = time.time()
+  print_pef(start, end)
+
+print("Query int range - c")
+if TEST_QUERY_C:
+  def gen_bound():
+    lower = random.randint(0, 100)
+    return (lower, lower + 3)
+  def query(lower, upper):
+    return f"SELECT * FROM metadatas WHERE (userMeta->>'c')::int <= {upper} AND (userMeta->>'c')::int >= {lower};"
+  # query plan
+  lower, upper = gen_bound()
+  cursor.execute(QUERY_PLAN_PREFIX + query(lower, upper))
+  r = cursor.fetchone()[0]
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    lower, upper = gen_bound()
+    cursor.execute(query(lower, upper))
+    r = cursor.fetchall()
+    print_count(len(r), f"l:{lower}, u:{upper}")
+  end = time.time()
+  print_pef(start, end)
+
+print("Query int range - bbb")
+if TEST_QUERY_BBB:
+  def gen_bound():
+    lower = random.randint(0, 1000)
+    return (lower, lower + 10)
+  def query(lower, upper):
+    return f"SELECT * FROM metadatas WHERE (userMeta->>'bbb')::int <= {upper} AND (userMeta->>'bbb')::int >= {lower};"
+  # query plan
+  lower, upper = gen_bound()
+  cursor.execute(QUERY_PLAN_PREFIX + query(lower, upper))
+  r = cursor.fetchone()[0]
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    lower, upper = gen_bound()
+    cursor.execute(query(lower, upper))
+    r = cursor.fetchall()
+    print_count(len(r), f"l:{lower}, u:{upper}")
+  end = time.time()
+  print_pef(start, end)
 
 conn.commit()
 cursor.close()
