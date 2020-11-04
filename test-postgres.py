@@ -9,18 +9,18 @@ from sample import *
 QUERY_NUM = 20
 LOG = "PLAN" # DEBUG | PLAN | INFO
 
-CREATE_TABLE = False
-INSERT_DOC = False
+CREATE_TABLE  = False
+INSERT_DOC    = False
 
-TEST_QUERY_NAME = True
-TEST_QUERY_FILE_EXTENSTION = True
-TEST_QUERY_TAG = True
-TEST_QUERY_DATE = True
-TEST_QUERY_E = True
-TEST_QUERY_CCC = True
-TEST_QUERY_LENGTH = True
-TEST_QUERY_C = True
-TEST_QUERY_BBB = True
+TEST_QUERY_NAME               = True
+TEST_QUERY_FILE_EXTENSTION    = True
+TEST_QUERY_TAG                = True
+TEST_QUERY_DATE               = True
+TEST_QUERY_E                  = True
+TEST_QUERY_CCC                = True
+TEST_QUERY_LENGTH             = True
+TEST_QUERY_C                  = True
+TEST_QUERY_BBB                = True
 
 QUERY_PLAN_PREFIX = "EXPLAIN ANALYZE "
 

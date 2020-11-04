@@ -8,18 +8,19 @@ from pymongo import MongoClient, ASCENDING
 from sample import *
 
 QUERY_NUM = 20
-LOG = "INFO" # DEBUG | PLAN | INFO
+LOG = "PLAN" # DEBUG | PLAN | INFO
 
-TEST_QUERY_NAME = True
-INSERT_DOC = False
-TEST_QUERY_FILE_EXTENSTION = True
-TEST_QUERY_TAG = True
-TEST_QUERY_DATE = True
-TEST_QUERY_E = True
-TEST_QUERY_CCC = True
-TEST_QUERY_LENGTH = True
-TEST_QUERY_C = True
-TEST_QUERY_BBB = True
+INSERT_DOC                    = False
+
+TEST_QUERY_NAME               = True
+TEST_QUERY_FILE_EXTENSTION    = True
+TEST_QUERY_TAG                = True
+TEST_QUERY_DATE               = True
+TEST_QUERY_E                  = True
+TEST_QUERY_CCC                = True
+TEST_QUERY_LENGTH             = True
+TEST_QUERY_C                  = True
+TEST_QUERY_BBB                = True
 
 def process_doc(doc):
   ret = []
@@ -41,8 +42,9 @@ def print_query_plan(plan, pretty=True):
   if LOG not in ["DEBUG", "PLAN"]:
     return
   if pretty:
-    print("    query explain")
-    print(json.dumps(plan, indent=4, default=json_util.default))
+    method = plan["executionStats"]["executionStages"]["inputStage"]["stage"]
+    num_doc = plan["executionStats"]["executionStages"]["docsExamined"]
+    print(f"    query explain: {method}, doc_examine={num_doc}")
   else:
     print(f"    query explain: {plan}")
 
@@ -86,6 +88,29 @@ c = metadatas.count_documents({})
 end = time.time()
 print(f"Number of documents={c}")
 print(f"  == COUNT TIME: {end - start}s")
+
+print("Query prefix - name")
+if TEST_QUERY_NAME:
+  def query(name_prefix):
+    return {
+      "properties": {
+        "$elemMatch": {
+          "key": "name",
+          "val": { "$regex": f"^{name_prefix}" }
+        }
+      }
+    }
+  # query plan
+  r = metadatas.find(query("aaaaa")).explain()
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for i in range(QUERY_NUM):
+    name_prefix = random.choice(string.ascii_lowercase) * 5
+    cursor = metadatas.find(query(name_prefix))
+    print_count(cursor, f"{name_prefix}")
+  end = time.time()
+  print_pef(start, end)
 
 print("Query exact - file extension")
 if TEST_QUERY_FILE_EXTENSTION: 
@@ -171,13 +196,13 @@ print("Query date range - ccc")
 if TEST_QUERY_CCC:
   print("  == SKIP: similar to date")
 
-print("query int range - content length")
+print("Query int range - content length")
 if TEST_QUERY_LENGTH:
-  start = time.time()
-  for i in range(QUERY_NUM):
+  def gen_bound():
     start_int = random.randint(1000, 9000)
-    end_int = start_int + 500
-    query = {
+    return (start_int, start_int + 500)
+  def query(start_int, end_int):
+    return {
       "properties": {
         "$elemMatch": {
           "key": "content-length",
@@ -188,18 +213,25 @@ if TEST_QUERY_LENGTH:
         }
       }
     }
-    cursor = metadatas.find(query)
+  # query play
+  start_int, end_int = gen_bound()
+  r = metadatas.find(query(start_int, end_int)).explain()
+  print_query_plan(r)
+  # benchmark
+  start = time.time()
+  for i in range(QUERY_NUM):
+    start_int, end_int = gen_bound()
+    cursor = metadatas.find(query(start_int, end_int))
     print_count(cursor, f"s: {start_int}, e: {end_int}")    
   end = time.time()
-  print(f"  == TOTAL QUERY TIME: {end - start}s")
-  print(f"  == AVG QUERY TIME: {(end - start) / QUERY_NUM}s")
+  print_pef(start, end)
 
-print("query int range - c")
+print("Query int range - c")
 if TEST_QUERY_C:
   print("  == SKIP: similar to content-length")
   pass
 
-print("query int range - bbb")
+print("Query int range - bbb")
 if TEST_QUERY_BBB:
   print("  == SKIP: similar to content-length")
 

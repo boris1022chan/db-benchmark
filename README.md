@@ -16,7 +16,7 @@ pip install -r requirement.txt
 ### MongoDB
 To benchmark MongoDB:
 ```bash
-docker run -p 27017:27017 --name test-mongo mongo:4.0
+docker run -d -p 27017:27017 --name test-mongo mongo:4.0
 python3 test-mongo.py
 ```
 For more fine-grain control of which test to run, open `test-mongo.py` and toggle the global variables.
@@ -43,6 +43,7 @@ docker run -d \
     -e POSTGRES_DB=test-database \
     -e PGDATA=/var/lib/postgresql/data/pgdata \
     postgres:12
+python3 test-postgres.py
 # check if Postgres is running
 docker exec -it test-postgres bash
 ~ psql -U postgres
