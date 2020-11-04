@@ -10,6 +10,7 @@ from sample import *
 QUERY_NUM = 20
 LOG = "INFO" # DEBUG | PLAN | INFO
 
+TEST_QUERY_NAME = True
 INSERT_DOC = False
 TEST_QUERY_FILE_EXTENSTION = True
 TEST_QUERY_TAG = True
@@ -155,7 +156,7 @@ if TEST_QUERY_DATE:
   print_query_plan(r)
   # benchmark
   start = time.time()
-  for i in range(1):
+  for i in range(QUERY_NUM):
     start_date, end_date = gen_test_date()
     cursor = metadatas.find(query(start_date, end_date))
     print_count(cursor, f"s:{start_date}, e:{end_date}")

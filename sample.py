@@ -3,6 +3,11 @@ import string
 import uuid
 from datetime import datetime, timedelta
 
+def gen_name():
+  prefix_letter = random.choice(string.ascii_lowercase)
+  id = str(uuid.uuid4())
+  return f"{prefix_letter * 5}-{id}"
+
 def gen_datetime():
   d = random.randint(0, 1001)
   h = random.randint(0, 25)
@@ -49,6 +54,7 @@ def gen_usermeta():
 def gen_meta():
   date = gen_datetime()
   return {
+    "name": gen_name(),
     "accept-ranges": "bytes",
     "content-length": random.randint(1000, 60000),
     "content-type": "binary/octet-stream",

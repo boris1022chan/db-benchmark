@@ -33,5 +33,23 @@ docker volume prune # re-claim space
 ```
 
 ### Postgres
+To benchmark Postgres:
+```bash
+docker run -d \
+    --name test-postgres \
+    -p 5432:5432 \
+    -h 0.0.0.0 \
+    -e POSTGRES_PASSWORD=1234 \
+    -e POSTGRES_DB=test-database \
+    -e PGDATA=/var/lib/postgresql/data/pgdata \
+    postgres:12
+# check if Postgres is running
+docker exec -it test-postgres bash
+~ psql -U postgres
+~~ \list                    # show all databases
+~~ \connect test-database   # connect to test database
+~~ \dt                      # show tables
+~~ \d <table>               # show table schema
+```
 
 ### Apache Solr
