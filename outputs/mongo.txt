@@ -1,0 +1,36 @@
+Establishing connection with MongoDB
+All set, ready to test
+Insert 10k documents in db
+Finish inserting 10k documents
+  == INSERT TIME: 17.048771142959595s
+Confirming number of documenets
+Number of documents=10000
+  == COUNT TIME: 0.0069043636322021484s
+Query prefix - name
+    query explain: IXSCAN, doc_examine=380
+  == TOTAL QUERY TIME: 0.32425570487976074s
+  == AVG QUERY TIME: 0.01621278524398804s
+Query exact - file extension
+    query explain: IXSCAN, doc_examine=2544
+  == TOTAL QUERY TIME: 2.0300190448760986s
+  == AVG QUERY TIME: 0.10150095224380493s
+Query exact - tag
+    query explain: IXSCAN, doc_examine=1440
+  == TOTAL QUERY TIME: 1.1413168907165527s
+  == AVG QUERY TIME: 0.05706584453582764s
+Query date range - date
+    query explain: IXSCAN, doc_examine=233
+  == TOTAL QUERY TIME: 0.18146395683288574s
+  == AVG QUERY TIME: 0.009073197841644287s
+Query date range - e
+  == SKIP: similar to date
+Query date range - ccc
+  == SKIP: similar to date
+Query int range - content length
+    query explain: IXSCAN, doc_examine=99
+  == TOTAL QUERY TIME: 0.08745455741882324s
+  == AVG QUERY TIME: 0.004372727870941162s
+Query int range - c
+  == SKIP: similar to content-length
+Query int range - bbb
+  == SKIP: similar to content-length

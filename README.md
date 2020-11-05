@@ -59,7 +59,16 @@ To benchmark Solr:
 # This runs single instance of Solr core instead of Solr cloud
 # May need to wait a few second for core to be created
 docker run -d -p 8983:8983 --name test-solr solr:8.6 solr-precreate example_core
+# Make sure core is created before running next command by visiting http://localhost:8983/solr
 python3 test-solr.py
 ```
 
 override schema: https://stackoverflow.com/questions/60659470/add-field-to-solr-when-running-in-docker
+
+## Result
+The sample result is run on the ASUS Zenbook UX430UA with CPU i5-7200U @ 2.5GHz (2 core 4 thread) and 8GB of ram. Sample result can be found in `outputs/` folder. We have also recorded the following CPU and memory usage:
+|          | max CPU | avg CPU | max MEM |
+|----------|---------|---------|---------|
+| MongoDB  | 28.77%  | ~25%    | 117.2MB |
+| Postgres | 73.14%  | ~30%    | 17.2MB  |
+| Solr     | 245.79% | ~80%    | 941.6MB |

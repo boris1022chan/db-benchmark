@@ -1,0 +1,44 @@
+Establishing connection with Postgres
+All set, ready to test
+Insert 10k documents in db
+Finish inserting 10k documents
+  == INSERT TIME: 12.79137110710144s
+Confirming number of rows
+Number of documents=10000
+  == COUNT TIME: 0.004126071929931641s
+Query prefix - name
+    query explain: Seq Scan on metadatas  (cost=0.00..754.65 rows=21 width=1158) (actual time=0.014..1.562 rows=387 loops=1)
+  == TOTAL QUERY TIME: 0.19538021087646484s
+  == AVG QUERY TIME: 0.009769010543823241s
+Query exact - file extension
+    query explain: Seq Scan on metadatas  (cost=0.00..754.65 rows=4 width=1158) (actual time=0.013..5.864 rows=2526 loops=1)
+  == TOTAL QUERY TIME: 0.974174976348877s
+  == AVG QUERY TIME: 0.048708748817443845s
+Query exact - tag
+    query explain: Seq Scan on metadatas  (cost=0.00..754.65 rows=4 width=1158) (actual time=0.011..5.496 rows=1375 loops=1)
+  == TOTAL QUERY TIME: 0.6233139038085938s
+  == AVG QUERY TIME: 0.031165695190429686s
+Query date range - date
+    query explain: Bitmap Heap Scan on metadatas  (cost=4.50..77.92 rows=21 width=1158) (actual time=0.040..0.206 rows=186 loops=1)
+  == TOTAL QUERY TIME: 0.09858918190002441s
+  == AVG QUERY TIME: 0.004929459095001221s
+Query date range - e
+    query explain: Seq Scan on metadatas  (cost=0.00..828.36 rows=1404 width=1158) (actual time=0.055..26.826 rows=8997 loops=1)
+  == TOTAL QUERY TIME: 1.909581184387207s
+  == AVG QUERY TIME: 0.09547905921936035s
+Query date range - ccc
+    query explain: Seq Scan on metadatas  (cost=0.00..828.36 rows=1404 width=1158) (actual time=0.020..7.144 rows=1048 loops=1)
+  == TOTAL QUERY TIME: 0.5727684497833252s
+  == AVG QUERY TIME: 0.02863842248916626s
+query int range - content length
+    query explain: Bitmap Heap Scan on metadatas  (cost=4.50..77.92 rows=21 width=4) (actual time=0.012..0.026 rows=12 loops=1)
+  == TOTAL QUERY TIME: 0.02062368392944336s
+  == AVG QUERY TIME: 0.001031184196472168s
+Query int range - c
+    query explain: Seq Scan on metadatas  (cost=0.00..828.36 rows=21 width=1158) (actual time=0.030..7.578 rows=373 loops=1)
+  == TOTAL QUERY TIME: 0.3282585144042969s
+  == AVG QUERY TIME: 0.016412925720214844s
+Query int range - bbb
+    query explain: Seq Scan on metadatas  (cost=0.00..828.36 rows=21 width=1158) (actual time=0.402..4.236 rows=15 loops=1)
+  == TOTAL QUERY TIME: 0.12463831901550293s
+  == AVG QUERY TIME: 0.006231915950775146s

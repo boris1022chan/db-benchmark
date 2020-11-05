@@ -1,0 +1,35 @@
+Establishing connection with Solr
+All set, ready to test
+Insert 10k documents in solr
+Finish inserting 10k documents
+  == INSERT TIME: 502.5438914299011s
+Confirming number of documents
+Number of documents=10000
+  == COUNT TIME: 0.08293008804321289s
+Query prefix - name
+  == TOTAL QUERY TIME: 0.23175501823425293s
+  == AVG QUERY TIME: 0.011587750911712647s
+Query exact - file extension
+  == TOTAL QUERY TIME: 0.16832327842712402s
+  == AVG QUERY TIME: 0.0084161639213562s
+Query exact - tag
+  == TOTAL QUERY TIME: 0.1695551872253418s
+  == AVG QUERY TIME: 0.00847775936126709s
+Query date range - date
+  == TOTAL QUERY TIME: 0.20335173606872559s
+  == AVG QUERY TIME: 0.010167586803436279s
+Query date range - e
+  == TOTAL QUERY TIME: 0.17126107215881348s
+  == AVG QUERY TIME: 0.008563053607940675s
+Query date range - ccc
+  == TOTAL QUERY TIME: 0.18608427047729492s
+  == AVG QUERY TIME: 0.009304213523864745s
+query int range - content length
+  == TOTAL QUERY TIME: 0.16217684745788574s
+  == AVG QUERY TIME: 0.008108842372894286s
+Query int range - c
+  == TOTAL QUERY TIME: 0.1544640064239502s
+  == AVG QUERY TIME: 0.00772320032119751s
+Query int range - bbb
+  == TOTAL QUERY TIME: 0.15535807609558105s
+  == AVG QUERY TIME: 0.007767903804779053s

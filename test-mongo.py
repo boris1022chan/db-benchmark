@@ -8,7 +8,7 @@ from sample import *
 QUERY_NUM = 20
 LOG = "PLAN" # DEBUG | PLAN | INFO
 
-INSERT_DOC                    = False
+INSERT_DOC                    = True
 
 TEST_QUERY_NAME               = True
 TEST_QUERY_FILE_EXTENSTION    = True
