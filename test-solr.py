@@ -10,9 +10,9 @@ base_url = 'http://localhost:8983/solr/example_core/'
 search_handler = './select'
 
 QUERY_NUM = 20
-LOG = "DEBUG" # DEBUG | PLAN | INFO
+LOG = "PLAN" # DEBUG | PLAN | INFO
 
-INSERT_DOC                    = False
+INSERT_DOC                    = True
 
 TEST_QUERY_NAME               = True
 TEST_QUERY_FILE_EXTENSTION    = True
@@ -85,7 +85,7 @@ if TEST_QUERY_NAME:
   start = time.time()
   for _ in range(QUERY_NUM):
     prefix = random.choice(string.ascii_lowercase) * 5
-    search(query(prefix))
+    res = search(query(prefix))
     c = res["response"]["numFound"]
     print_count(c, prefix)
   end = time.time()
@@ -123,24 +123,102 @@ if TEST_QUERY_TAG:
 
 print("Query date range - date")
 if TEST_QUERY_DATE:
-  pass
+  def gen_test_date():
+    start_date = gen_datetime()
+    return (start_date, start_date + timedelta(days=20))
+  def query(start_date, end_date):
+    return f'date:["{start_date.isoformat()}Z" TO "{end_date.isoformat()}Z"]'
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    start_date, end_date = gen_test_date()
+    res = search(query(start_date, end_date))
+    c = res["response"]["numFound"]
+    print_count(c, f"s:{start_date}, e:{end_date}")
+  end = time.time()
+  print_pef(start, end)
 
 print("Query date range - e")
 if TEST_QUERY_E:
-  pass
+  def gen_test_date():
+    start_date = gen_datetime()
+    return (start_date, start_date + timedelta(days=20))
+  def query(start_date, end_date):
+    return f'user-meta-e:["{start_date.isoformat()}Z" TO "{end_date.isoformat()}Z"]'
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    start_date, end_date = gen_test_date()
+    res = search(query(start_date, end_date))
+    c = res["response"]["numFound"]
+    print_count(c, f"s:{start_date}, e:{end_date}")
+  end = time.time()
+  print_pef(start, end)
 
 print("Query date range - ccc")
 if TEST_QUERY_CCC:
-  pass
+  def gen_test_date():
+    start_date = gen_datetime()
+    return (start_date, start_date + timedelta(days=20))
+  def query(start_date, end_date):
+    return f'user-meta-ccc:["{start_date.isoformat()}Z" TO "{end_date.isoformat()}Z"]'
+  # benchmark
+  start = time.time()
+  for _ in range(QUERY_NUM):
+    start_date, end_date = gen_test_date()
+    res = search(query(start_date, end_date))
+    c = res["response"]["numFound"]
+    print_count(c, f"s:{start_date}, e:{end_date}")
+  end = time.time()
+  print_pef(start, end)
 
 print("query int range - content length")
 if TEST_QUERY_LENGTH:
-  pass
+  def gen_bound():
+    start_int = random.randint(1000, 9000)
+    return (start_int, start_int + 500) 
+  def query(start_int, end_int):
+    return f'content-length:[{start_int} TO {end_int}]'
+  # benchmark
+  start = time.time()
+  for i in range(QUERY_NUM):
+    start_int, end_int = gen_bound()
+    res = search(query(start_int, end_int))
+    c = res["response"]["numFound"]
+    print_count(c, f"s: {start_int}, e: {end_int}")    
+  end = time.time()
+  print_pef(start, end)
 
 print("Query int range - c")
 if TEST_QUERY_C:
-  pass
+  def gen_bound():
+    lower = random.randint(0, 100)
+    return (lower, lower + 3)
+  def query(start_int, end_int):
+    return f'user-meta-c:[{start_int} TO {end_int}]'
+  # benchmark
+  start = time.time()
+  for i in range(QUERY_NUM):
+    start_int, end_int = gen_bound()
+    res = search(query(start_int, end_int))
+    c = res["response"]["numFound"]
+    print_count(c, f"s: {start_int}, e: {end_int}")    
+  end = time.time()
+  print_pef(start, end)
 
 print("Query int range - bbb")
 if TEST_QUERY_BBB:
-  pass
+  def gen_bound():
+    lower = random.randint(0, 1000)
+    return (lower, lower + 10)
+  def query(start_int, end_int):
+    return f'user-meta-bbb:[{start_int} TO {end_int}]'
+  # benchmark
+  start = time.time()
+  for i in range(QUERY_NUM):
+    start_int, end_int = gen_bound()
+    res = search(query(start_int, end_int))
+    c = res["response"]["numFound"]
+    print_count(c, f"s: {start_int}, e: {end_int}")    
+  end = time.time()
+  print_pef(start, end)

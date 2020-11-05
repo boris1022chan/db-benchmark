@@ -57,6 +57,7 @@ docker exec -it test-postgres bash
 To benchmark Solr:
 ```bash
 # This runs single instance of Solr core instead of Solr cloud
+# May need to wait a few second for core to be created
 docker run -d -p 8983:8983 --name test-solr solr:8.6 solr-precreate example_core
 python3 test-solr.py
 ```
