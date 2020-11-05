@@ -10,7 +10,7 @@ This guide assume you have the following installed in your system.
 ## Get Started
 Install all required dependencies with
 ```bash
-pip install -r requirement.txt
+pip3 install -r requirement.txt
 ```
 
 ### MongoDB
@@ -54,3 +54,11 @@ docker exec -it test-postgres bash
 ```
 
 ### Apache Solr
+To benchmark Solr:
+```bash
+# This runs single instance of Solr core instead of Solr cloud
+docker run -d -p 8983:8983 --name test-solr solr:8.6 solr-precreate example_core
+python3 test-solr.py
+```
+
+override schema: https://stackoverflow.com/questions/60659470/add-field-to-solr-when-running-in-docker

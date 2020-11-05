@@ -1,8 +1,6 @@
-import json
 import sys
 import random
 import time
-from bson import json_util
 from datetime import datetime, timedelta
 from pymongo import MongoClient, ASCENDING
 from sample import *

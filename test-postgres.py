@@ -3,7 +3,6 @@ import psycopg2
 import random
 import string
 import time
-from bson import json_util
 from sample import *
 
 QUERY_NUM = 20
